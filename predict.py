@@ -41,8 +41,8 @@ class Predictor(BasePredictor):
         loader = workflow["2"]["inputs"]
         loader["width"] = width
         loader["height"] = height
-        loader["prompt"] = f"Sticker, {prompt}, svg, solid color background"
-        loader["negative_prompt"] = f"nsfw, nude, {negative_prompt}, photo, photography"
+        loader["positive"] = f"Sticker, {prompt}, svg, solid color background"
+        loader["negative"] = f"nsfw, nude, {negative_prompt}, photo, photography"
 
         sampler = workflow["4"]["inputs"]
         sampler["seed"] = seed
