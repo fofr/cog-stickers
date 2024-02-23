@@ -1,7 +1,7 @@
 import os
 import shutil
-import tarfile
-import zipfile
+import json
+import random
 from typing import List
 from cog import BasePredictor, Input, Path
 from helpers.comfyui import ComfyUI
@@ -10,14 +10,15 @@ OUTPUT_DIR = "/tmp/outputs"
 INPUT_DIR = "/tmp/inputs"
 COMFYUI_TEMP_OUTPUT_DIR = "ComfyUI/temp"
 
-with open("examples/api_workflows/was_clipseg_basic_api.json", "r") as file:
-    EXAMPLE_WORKFLOW_JSON = file.read()
+with open("workflow.json", "r") as file:
+    workflow_json = file.read()
 
 
 class Predictor(BasePredictor):
     def setup(self):
         self.comfyUI = ComfyUI("127.0.0.1:8188")
         self.comfyUI.start_server(OUTPUT_DIR, INPUT_DIR)
+        self.comfyUI.load_workflow(workflow_json)
 
     def cleanup(self):
         for directory in [OUTPUT_DIR, INPUT_DIR, COMFYUI_TEMP_OUTPUT_DIR]:
@@ -25,23 +26,43 @@ class Predictor(BasePredictor):
                 shutil.rmtree(directory)
             os.makedirs(directory)
 
-    def handle_input_file(self, input_file: Path):
-        file_extension = os.path.splitext(input_file)[1]
-        if file_extension == ".tar":
-            with tarfile.open(input_file, "r") as tar:
-                tar.extractall(INPUT_DIR)
-        elif file_extension == ".zip":
-            with zipfile.ZipFile(input_file, "r") as zip_ref:
-                zip_ref.extractall(INPUT_DIR)
-        elif file_extension in [".jpg", ".jpeg", ".png", ".webp"]:
-            shutil.copy(input_file, os.path.join(INPUT_DIR, f"input{file_extension}"))
-        else:
-            raise ValueError(f"Unsupported file type: {file_extension}")
+    def update_workflow(
+        self,
+        workflow,
+        width,
+        height,
+        steps,
+        prompt,
+        negative_prompt,
+        seed,
+        upscale_steps,
+        is_upscale,
+    ):
+        loader = workflow["2"]["inputs"]
+        loader["width"] = width
+        loader["height"] = height
+        loader["prompt"] = f"Sticker, {prompt}, svg, solid color background"
+        loader["negative_prompt"] = f"nsfw, nude, {negative_prompt}, photo, photography"
 
-        print("====================================")
-        print(f"Inputs uploaded to {INPUT_DIR}:")
-        self.log_and_collect_files(INPUT_DIR)
-        print("====================================")
+        sampler = workflow["4"]["inputs"]
+        sampler["seed"] = seed
+        sampler["steps"] = steps
+
+        upscaler = workflow["11"]["inputs"]
+        if is_upscale:
+            del workflow["5"]
+            del workflow["10"]
+            upscaler["steps"] = upscale_steps
+            upscaler["seed"] = seed
+        else:
+            del workflow["16"]
+            del workflow["17"]
+            del workflow["18"]
+            del upscaler["image"]
+            del upscaler["model"]
+            del upscaler["positive"]
+            del upscaler["negative"]
+            del upscaler["vae"]
 
     def log_and_collect_files(self, directory, prefix=""):
         files = []
@@ -59,44 +80,49 @@ class Predictor(BasePredictor):
 
     def predict(
         self,
-        workflow_json: str = Input(
-            description="Your ComfyUI workflow as JSON. You must use the API version of your workflow. Get it from ComfyUI using ‘Save (API format)’. Instructions here: https://github.com/fofr/cog-comfyui",
+        prompt: str = Input(default="a cute cat"),
+        negative_prompt: str = Input(
             default="",
+            description="Things you do not want in the merged image",
         ),
-        input_file: Path = Input(
-            description="Input image, tar or zip file. Read guidance on workflows and input files here: https://github.com/fofr/cog-comfyui. Alternatively, you can replace inputs with URLs in your JSON workflow and the model will download them.",
-            default=None,
+        width: int = Input(default=1024),
+        height: int = Input(default=1024),
+        steps: int = Input(default=20),
+        seed: int = Input(
+            default=None, description="Fix the random seed for reproducibility"
         ),
-        return_temp_files: bool = Input(
-            description="Return any temporary files, such as preprocessed controlnet images. Useful for debugging.",
-            default=False,
-        ),
-        randomise_seeds: bool = Input(
-            description="Automatically randomise seeds (seed, noise_seed, rand_seed)",
-            default=True,
+        upscale: bool = Input(default=True, description="2x upscale the sticker"),
+        upscale_steps: int = Input(
+            default=10, description="Number of steps to upscale"
         ),
     ) -> List[Path]:
         """Run a single prediction on the model"""
         self.cleanup()
 
-        if input_file:
-            self.handle_input_file(input_file)
+        if seed is None:
+            seed = random.randint(0, 2**32 - 1)
+            print(f"Random seed set to: {seed}")
 
-        # TODO: Record the previous models loaded
-        # If different, run /free to free up models and memory
+        workflow = json.loads(workflow_json)
 
-        wf = self.comfyUI.load_workflow(workflow_json or EXAMPLE_WORKFLOW_JSON)
+        self.update_workflow(
+            workflow,
+            width,
+            height,
+            steps,
+            prompt,
+            negative_prompt,
+            seed,
+            upscale_steps,
+            is_upscale=upscale,
+        )
 
-        if randomise_seeds:
-            self.comfyUI.randomise_seeds(wf)
-
+        wf = self.comfyUI.load_workflow(workflow)
         self.comfyUI.connect()
         self.comfyUI.run_workflow(wf)
 
         files = []
         output_directories = [OUTPUT_DIR]
-        if return_temp_files:
-            output_directories.append(COMFYUI_TEMP_OUTPUT_DIR)
 
         for directory in output_directories:
             print(f"Contents of {directory}:")
