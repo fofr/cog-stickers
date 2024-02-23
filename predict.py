@@ -83,7 +83,7 @@ class Predictor(BasePredictor):
         prompt: str = Input(default="a cute cat"),
         negative_prompt: str = Input(
             default="",
-            description="Things you do not want in the merged image",
+            description="Things you do not want in the image",
         ),
         width: int = Input(default=1024),
         height: int = Input(default=1024),
