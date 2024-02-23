@@ -3,10 +3,7 @@ import time
 import os
 import json
 
-from helpers.ComfyUI_Controlnet_Aux import ComfyUI_Controlnet_Aux
-from helpers.ComfyUI_AnimateDiff_Evolved import ComfyUI_AnimateDiff_Evolved
 from helpers.ComfyUI_BRIA_AI_RMBG import ComfyUI_BRIA_AI_RMBG
-from helpers.WAS_Node_Suite import WAS_Node_Suite
 
 UPDATED_WEIGHTS_MANIFEST_URL = f"https://weights.replicate.delivery/default/comfy-ui/weights.json?cache_bypass={int(time.time())}"
 UPDATED_WEIGHTS_MANIFEST_PATH = "updated_weights.json"
@@ -85,9 +82,6 @@ class WeightsManifest:
                 weights_map.update(
                     self._generate_weights_map(self.weights_manifest[key], key.lower())
                 )
-        weights_map.update(ComfyUI_Controlnet_Aux.weights_map(BASE_URL))
-        weights_map.update(ComfyUI_AnimateDiff_Evolved.weights_map(BASE_URL))
-        weights_map.update(WAS_Node_Suite.weights_map(BASE_URL))
         weights_map.update(ComfyUI_BRIA_AI_RMBG.weights_map(BASE_URL))
 
         print("Allowed weights:")
@@ -95,60 +89,3 @@ class WeightsManifest:
             print(weight)
 
         return weights_map
-
-    def non_commercial_weights(self):
-        return [
-            "inswapper_128.onnx",
-            "inswapper_128_fp16.onnx",
-            "proteus_v02.safetensors",
-            "RealVisXL_V3.0_Turbo.safetensors",
-            "sd_xl_turbo_1.0.safetensors",
-            "sd_xl_turbo_1.0_fp16.safetensors",
-            "svd.safetensors",
-            "svd_xt.safetensors",
-            "turbovisionxlSuperFastXLBasedOnNew_tvxlV32Bakedvae",
-            "copaxTimelessxlSDXL1_v8.safetensors",
-            "MODILL_XL_0.27_RC.safetensors",
-            "epicrealismXL_v10.safetensors",
-        ]
-
-    def is_non_commercial_only(self, weight_str):
-        return weight_str in self.non_commercial_weights()
-
-    def write_supported_weights(self):
-        weight_lists = {
-            "Checkpoints": self.weights_manifest.get("CHECKPOINTS", []),
-            "Upscale models": self.weights_manifest.get("UPSCALE_MODELS", []),
-            "CLIP Vision": self.weights_manifest.get("CLIP_VISION", []),
-            "LORAs": self.weights_manifest.get("LORAS", []),
-            "Embeddings": self.weights_manifest.get("EMBEDDINGS", []),
-            "IPAdapter": self.weights_manifest.get("IPADAPTER", []),
-            "ControlNet": self.weights_manifest.get("CONTROLNET", []),
-            "VAE": self.weights_manifest.get("VAE", []),
-            "UNets": self.weights_manifest.get("UNET", []),
-            "PhotoMaker": self.weights_manifest.get("PHOTOMAKER", []),
-            "InstantID": self.weights_manifest.get("INSTANTID", []),
-            "InsightFace": self.weights_manifest.get("INSIGHTFACE", []),
-            "Ultralytics": self.weights_manifest.get("ULTRALYTICS", []),
-            "Segment anything models (SAM)": self.weights_manifest.get("SAMS", []),
-            "GroundingDino": self.weights_manifest.get("GROUNDING-DINO", []),
-            "MMDets": self.weights_manifest.get("MMDETS", []),
-            "Face restoration models": self.weights_manifest.get(
-                "FACERESTORE_MODELS", []
-            ),
-            "Face detection models": self.weights_manifest.get("FACEDETECTION", []),
-            "AnimateDiff": ComfyUI_AnimateDiff_Evolved.models(),
-            "AnimateDiff LORAs": ComfyUI_AnimateDiff_Evolved.loras(),
-            "ControlNet Preprocessors": sorted(
-                {
-                    f"{repo}/{filename}"
-                    for filename, repo in ComfyUI_Controlnet_Aux.models().items()
-                }
-            ),
-        }
-        with open("supported_weights.md", "w") as f:
-            for weight_type, weights in weight_lists.items():
-                f.write(f"## {weight_type}\n\n")
-                for weight in weights:
-                    f.write(f"- {weight}\n")
-                f.write("\n")
