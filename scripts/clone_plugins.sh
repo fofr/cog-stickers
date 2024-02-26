@@ -9,6 +9,7 @@
 repos=(
   "https://github.com/jags111/efficiency-nodes-comfyui 1ac5f18"
   "https://github.com/ZHO-ZHO-ZHO/ComfyUI-BRIA_AI-RMBG 44a3f8f"
+  "https://github.com/ssitu/ComfyUI_UltimateSDUpscale bcefc5b"
 )
 
 # Destination directory
