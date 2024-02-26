@@ -21,6 +21,7 @@ class Predictor(BasePredictor):
         self.comfyUI.load_workflow(workflow_json)
 
     def cleanup(self):
+        self.comfyUI.clear_queue()
         for directory in [OUTPUT_DIR, INPUT_DIR, COMFYUI_TEMP_OUTPUT_DIR]:
             if os.path.exists(directory):
                 shutil.rmtree(directory)
