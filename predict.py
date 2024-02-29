@@ -40,8 +40,8 @@ class Predictor(BasePredictor):
         is_upscale,
     ):
         loader = workflow["2"]["inputs"]
-        loader["width"] = width
-        loader["height"] = height
+        loader["empty_latent_width"] = width
+        loader["empty_latent_height"] = height
         loader["positive"] = f"Sticker, {prompt}, svg, solid color background"
         loader["negative"] = f"nsfw, nude, {negative_prompt}, photo, photography"
 
