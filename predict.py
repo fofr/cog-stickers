@@ -2,6 +2,8 @@ import os
 import shutil
 import json
 import random
+import mimetypes
+from PIL import Image
 from typing import List
 from cog import BasePredictor, Input, Path
 from helpers.comfyui import ComfyUI
@@ -9,6 +11,8 @@ from helpers.comfyui import ComfyUI
 OUTPUT_DIR = "/tmp/outputs"
 INPUT_DIR = "/tmp/inputs"
 COMFYUI_TEMP_OUTPUT_DIR = "ComfyUI/temp"
+
+mimetypes.add_type("image/webp", ".webp")
 
 with open("sticker_maker_api.json", "r") as file:
     workflow_json = file.read()
@@ -71,6 +75,17 @@ class Predictor(BasePredictor):
         number_of_images: int = Input(
             default=1, ge=1, le=10, description="Number of images to generate"
         ),
+        output_format: str = Input(
+            description="Format of the output images",
+            choices=["webp", "jpg", "png"],
+            default="webp",
+        ),
+        output_quality: int = Input(
+            description="Quality of the output images, from 0 to 100. 100 is best quality, 0 is lowest quality.",
+            default=90,
+            ge=0,
+            le=100,
+        ),
         seed: int = Input(
             default=None, description="Fix the random seed for reproducibility"
         ),
@@ -98,12 +113,23 @@ class Predictor(BasePredictor):
         wf = self.comfyUI.load_workflow(workflow)
         self.comfyUI.connect()
         self.comfyUI.run_workflow(wf)
+        files = self.log_and_collect_files(OUTPUT_DIR)
 
-        files = []
-        output_directories = [OUTPUT_DIR]
+        if output_quality < 100 or output_format in ["webp", "jpg"]:
+            optimised_files = []
+            for file in files:
+                if file.is_file() and file.suffix in [".jpg", ".jpeg", ".png"]:
+                    image = Image.open(file)
+                    optimised_file_path = file.with_suffix(f".{output_format}")
+                    image.save(
+                        optimised_file_path,
+                        quality=output_quality,
+                        optimize=True,
+                    )
+                    optimised_files.append(optimised_file_path)
+                else:
+                    optimised_files.append(file)
 
-        for directory in output_directories:
-            print(f"Contents of {directory}:")
-            files.extend(self.log_and_collect_files(directory))
+            files = optimised_files
 
         return files
