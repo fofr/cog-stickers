@@ -10,7 +10,7 @@ OUTPUT_DIR = "/tmp/outputs"
 INPUT_DIR = "/tmp/inputs"
 COMFYUI_TEMP_OUTPUT_DIR = "ComfyUI/temp"
 
-with open("workflow.json", "r") as file:
+with open("sticker_maker_api.json", "r") as file:
     workflow_json = file.read()
 
 
@@ -27,43 +27,22 @@ class Predictor(BasePredictor):
                 shutil.rmtree(directory)
             os.makedirs(directory)
 
-    def update_workflow(
-        self,
-        workflow,
-        width,
-        height,
-        steps,
-        prompt,
-        negative_prompt,
-        seed,
-        upscale_steps,
-        is_upscale,
-    ):
-        loader = workflow["2"]["inputs"]
-        loader["empty_latent_width"] = width
-        loader["empty_latent_height"] = height
-        loader["positive"] = f"Sticker, {prompt}, svg, solid color background"
-        loader["negative"] = f"nsfw, nude, {negative_prompt}, photo, photography"
+    def update_workflow(self, workflow, **kwargs):
+        workflow["6"]["inputs"]["text"] = (
+            f"Sticker, {kwargs.get('prompt')}, svg, solid color background"
+        )
+        workflow["7"]["inputs"]["text"] = (
+            f"nsfw, nude, {kwargs.get('negative_prompt')}, photo, photography"
+        )
 
-        sampler = workflow["4"]["inputs"]
-        sampler["seed"] = seed
-        sampler["steps"] = steps
+        empty_latent_image = workflow["5"]["inputs"]
+        empty_latent_image["width"] = kwargs.get("width")
+        empty_latent_image["height"] = kwargs.get("height")
+        empty_latent_image["batch_size"] = kwargs.get("number_of_images")
 
-        upscaler = workflow["11"]["inputs"]
-        if is_upscale:
-            del workflow["5"]
-            del workflow["10"]
-            upscaler["steps"] = upscale_steps
-            upscaler["seed"] = seed
-        else:
-            del workflow["16"]
-            del workflow["17"]
-            del workflow["18"]
-            del upscaler["image"]
-            del upscaler["model"]
-            del upscaler["positive"]
-            del upscaler["negative"]
-            del upscaler["vae"]
+        scheduler = workflow["3"]["inputs"]
+        scheduler["seed"] = kwargs.get("seed")
+        scheduler["steps"] = kwargs.get("steps")
 
     def log_and_collect_files(self, directory, prefix=""):
         files = []
@@ -86,15 +65,14 @@ class Predictor(BasePredictor):
             default="",
             description="Things you do not want in the image",
         ),
-        width: int = Input(default=1024),
-        height: int = Input(default=1024),
-        steps: int = Input(default=20),
+        width: int = Input(default=1152),
+        height: int = Input(default=1152),
+        steps: int = Input(default=17),
+        number_of_images: int = Input(
+            default=1, ge=1, le=10, description="Number of images to generate"
+        ),
         seed: int = Input(
             default=None, description="Fix the random seed for reproducibility"
-        ),
-        upscale: bool = Input(default=True, description="2x upscale the sticker"),
-        upscale_steps: int = Input(
-            default=10, description="Number of steps to upscale"
         ),
     ) -> List[Path]:
         """Run a single prediction on the model"""
@@ -108,14 +86,13 @@ class Predictor(BasePredictor):
 
         self.update_workflow(
             workflow,
-            width,
-            height,
-            steps,
-            prompt,
-            negative_prompt,
-            seed,
-            upscale_steps,
-            is_upscale=upscale,
+            width=width,
+            height=height,
+            steps=steps,
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            number_of_images=number_of_images,
+            seed=seed,
         )
 
         wf = self.comfyUI.load_workflow(workflow)

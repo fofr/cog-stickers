@@ -1,0 +1,170 @@
+{
+  "3": {
+    "inputs": {
+      "seed": 187090627466101,
+      "steps": 17,
+      "cfg": 6,
+      "sampler_name": "dpmpp_2m_sde_gpu",
+      "scheduler": "karras",
+      "denoise": 1,
+      "model": [
+        "49",
+        0
+      ],
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "latent_image": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "4": {
+    "inputs": {
+      "ckpt_name": "albedobaseXL_v13.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "5": {
+    "inputs": {
+      "width": 1152,
+      "height": 1152,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "6": {
+    "inputs": {
+      "text": "Sticker, a cute cat, svg, solid color background",
+      "clip": [
+        "49",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": "nsfw, nude, photo, photography",
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "14": {
+    "inputs": {
+      "samples": [
+        "3",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "20": {
+    "inputs": {
+      "images": [
+        "14",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "36": {
+    "inputs": {
+      "sd_version": "SDXL",
+      "sub_batch_size": 16,
+      "samples": [
+        "3",
+        0
+      ],
+      "images": [
+        "14",
+        0
+      ]
+    },
+    "class_type": "LayeredDiffusionDecodeRGBA",
+    "_meta": {
+      "title": "Layer Diffuse Decode (RGBA)"
+    }
+  },
+  "48": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "36",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "49": {
+    "inputs": {
+      "lora_name": "artificialguybr/StickersRedmond.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": [
+        "56",
+        0
+      ],
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "56": {
+    "inputs": {
+      "config": "SDXL, Attention Injection",
+      "weight": 0.6,
+      "model": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "LayeredDiffusionApply",
+    "_meta": {
+      "title": "Layer Diffuse Apply"
+    }
+  }
+}
