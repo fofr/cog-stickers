@@ -26,8 +26,6 @@ class ComfyUI:
         self.input_directory = input_directory
         self.output_directory = output_directory
 
-        self.download_pre_start_models()
-
         server_thread = threading.Thread(
             target=self.run_server, args=(output_directory, input_directory)
         )
@@ -54,10 +52,6 @@ class ComfyUI:
                 return response.status == 200
         except URLError:
             return False
-
-    def download_pre_start_models(self):
-        # Some models need to be downloaded and loaded before starting ComfyUI
-        self.weights_downloader.download_torch_checkpoints()
 
     def handle_weights(self, workflow):
         print("Checking weights")
@@ -164,7 +158,9 @@ class ComfyUI:
             http_error = True
 
         if http_error:
-            raise Exception("ComfyUI Error – Your workflow could not be run. This usually happens if you’re trying to use an unsupported node. Check the logs for 'KeyError: ' details, and go to https://github.com/fofr/cog-comfyui to see the list of supported custom nodes.")
+            raise Exception(
+                "ComfyUI Error – Your workflow could not be run. This usually happens if you’re trying to use an unsupported node. Check the logs for 'KeyError: ' details, and go to https://github.com/fofr/cog-comfyui to see the list of supported custom nodes."
+            )
 
     def wait_for_prompt_completion(self, workflow, prompt_id):
         while True:

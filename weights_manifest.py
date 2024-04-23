@@ -3,8 +3,6 @@ import time
 import os
 import json
 
-from helpers.ComfyUI_BRIA_AI_RMBG import ComfyUI_BRIA_AI_RMBG
-
 UPDATED_WEIGHTS_MANIFEST_URL = f"https://weights.replicate.delivery/default/comfy-ui/weights.json?cache_bypass={int(time.time())}"
 UPDATED_WEIGHTS_MANIFEST_PATH = "updated_weights.json"
 WEIGHTS_MANIFEST_PATH = "weights.json"
@@ -82,7 +80,6 @@ class WeightsManifest:
                 weights_map.update(
                     self._generate_weights_map(self.weights_manifest[key], key.lower())
                 )
-        weights_map.update(ComfyUI_BRIA_AI_RMBG.weights_map(BASE_URL))
 
         print("Allowed weights:")
         for weight in weights_map.keys():
