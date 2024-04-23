@@ -14,7 +14,7 @@ from weights_downloader import WeightsDownloader
 from urllib.error import URLError
 
 # custom_nodes helpers
-from helpers.ComfyUI_BRIA_AI_RMBG import ComfyUI_BRIA_AI_RMBG
+from helpers.ComfyUI_LayerDiffuse import ComfyUI_LayerDiffuse
 
 
 class ComfyUI:
@@ -74,7 +74,7 @@ class ComfyUI:
 
         for node in workflow.values():
             for handler in [
-                ComfyUI_BRIA_AI_RMBG,
+                ComfyUI_LayerDiffuse,
             ]:
                 handler.add_weights(weights_to_download, node)
 
